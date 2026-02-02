@@ -3,18 +3,19 @@ import { X, Trash2, Edit2 } from 'lucide-react';
 import useStore from '../store/store';
 
 const MachineDetailsModal = ({ machine, isOpen, onClose }) => {
+  // All hooks must be called unconditionally and before any early return
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(machine || {});
   const updateMachine = useStore((state) => state.updateMachine);
   const deleteMachine = useStore((state) => state.deleteMachine);
   const products = useStore((state) => state.products);
   const tagColors = useStore((state) => state.tagColors);
-  
-  if (!isOpen || !machine) return null;
-  
+
   React.useEffect(() => {
     setEditData(machine);
   }, [machine]);
+
+  if (!isOpen || !machine) return null;
   
   const productName = products.find(p => p.id === machine.productId)?.name || 'Unassigned';
   

@@ -2,9 +2,9 @@ import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import MachineCard from './MachineCard';
 
-const MachineGroup = ({ groupName, machines, productId, subProduct }) => {
-  const droppableId = `${productId}-${subProduct || 'none'}`;
-  
+const MachineGroup = ({ groupName, machines, productId, subProduct, droppableId }) => {
+  // droppableId is now passed in as a prop (JSON string)
+  console.log('MachineGroup rendered:', { groupName, productId, subProduct, droppableId, machineCount: machines.length });
   return (
     <div>
       {/* Group Label */}

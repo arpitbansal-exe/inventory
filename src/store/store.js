@@ -57,21 +57,33 @@ const useStore = create((set, get) => ({
     machines: state.machines.filter(m => m.id !== machineId)
   })),
   
-  // Update machine
-  updateMachine: (machineId, updates) => set((state) => ({
-    machines: state.machines.map(m => 
-      m.id === machineId ? { ...m, ...updates } : m
-    )
-  })),
+  // Update machine 
+  updateMachine: (machineId, updates) => {
+    console.log('updateMachine called:', { machineId, updates });
+    set((state) => {
+      const updatedMachines = state.machines.map(m => 
+        m.id === machineId ? { ...m, ...updates } : m
+      );
+      console.log('Machine updated. Old machine:', state.machines.find(m => m.id === machineId));
+      console.log('New machine:', updatedMachines.find(m => m.id === machineId));
+      return { machines: updatedMachines };
+    });
+  },
   
-  // Move machine to different product/subProduct
-  moveMachine: (machineId, productId, subProduct) => set((state) => ({
-    machines: state.machines.map(m =>
-      m.id === machineId 
-        ? { ...m, productId, subProduct }
-        : m
-    )
-  })),
+  // Move machine to different product/subProduct 
+  moveMachine: (machineId, productId, subProduct) => {
+    console.log('moveMachine called:', { machineId, productId, subProduct });
+    set((state) => {
+      const updatedMachines = state.machines.map(m =>
+        m.id === machineId 
+          ? { ...m, productId, subProduct }
+          : m
+      );
+      console.log('Machine moved. Old machine:', state.machines.find(m => m.id === machineId));
+      console.log('New machine:', updatedMachines.find(m => m.id === machineId));
+      return { machines: updatedMachines };
+    });
+  },
   
   // Add tag to machine
   addTagToMachine: (machineId, tag) => set((state) => ({

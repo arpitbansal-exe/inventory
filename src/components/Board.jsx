@@ -8,47 +8,51 @@ const Board = () => {
   const machines = useStore((state) => state.machines);
   const getFilteredMachines = useStore((state) => state.getFilteredMachines);
   const moveMachine = useStore((state) => state.moveMachine);
+  const updateMachine = useStore((state) => state.updateMachine);
   const selectedView = useStore((state) => state.selectedView);
-  const advancedFilters = useStore((state) => state.advancedFilters);
   
   const filteredMachines = getFilteredMachines();
   
   // Handle drag and drop
   const onDragEnd = (result) => {
     const { source, destination, draggableId } = result;
+    
+    console.log('Drag ended:', { source, destination, draggableId });
+    
     // Dropped outside any droppable
-    if (!destination) return;
+    if (!destination) {
+      console.log('Dropped outside droppable area');
+      return;
+    }
 
     // Dropped in same place
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
     ) {
+      console.log('Dropped in same place');
       return;
     }
 
-    // Parse destination droppableId
-    // Format: "productId-subProduct" or "productId-none" or "unassigned-empty" or "env-none" or "owner-none"
-    const parts = destination.droppableId.split('-');
-    let destProductId = parts[0];
-    let destSubProduct = parts.slice(1).join('-');
-
-    let newProductId = null;
-    let newSubProduct = null;
-
-    if (selectedView === 'product') {
-      // Handle unassigned and empty cases
-      newProductId = destProductId === 'unassigned' ? null : destProductId;
-      newSubProduct = (destSubProduct === 'none' || destSubProduct === 'empty' || destSubProduct === '_all' || destSubProduct === '_ungrouped') ? null : destSubProduct;
-      // Defensive: if subProduct is empty string, set to null
-      if (newSubProduct === '') newSubProduct = null;
-      // Log for debugging
-      console.log('Moving machine', draggableId, 'to', newProductId, newSubProduct, '(from', source.droppableId, 'to', destination.droppableId, ')');
-      moveMachine(draggableId, newProductId, newSubProduct);
-    } else {
-      // For other views, do not update productId/subProduct
-      // Optionally, you could update environment/owner here if desired
-      // console.log('Drag in non-product view:', selectedView);
+    // Parse destination droppableId as JSON for all views
+    try {
+      const parsed = JSON.parse(destination.droppableId);
+      if (selectedView === 'product') {
+        const newProductId = parsed.productId === 'unassigned' ? null : parsed.productId;
+        const newSubProduct = parsed.subProduct === undefined || parsed.subProduct === null || parsed.subProduct === '_all' || parsed.subProduct === '_ungrouped' ? null : parsed.subProduct;
+        console.log('Moving machine', draggableId, 'to product:', newProductId, 'subProduct:', newSubProduct);
+        moveMachine(draggableId, newProductId, newSubProduct);
+      } else if (selectedView === 'environment') {
+        const newEnvironment = parsed.environment === undefined || parsed.environment === null ? null : parsed.environment;
+        console.log('Moving machine', draggableId, 'to environment:', newEnvironment);
+        updateMachine(draggableId, { environment: newEnvironment });
+      } else if (selectedView === 'owner') {
+        const newOwner = parsed.owner === undefined || parsed.owner === null || parsed.owner === 'no-owner' ? null : parsed.owner;
+        console.log('Moving machine', draggableId, 'to owner:', newOwner);
+        updateMachine(draggableId, { owner: newOwner });
+      }
+    } catch (e) {
+      console.error('Failed to parse droppableId as JSON:', destination.droppableId, e);
     }
   };
   
@@ -116,14 +120,25 @@ const Board = () => {
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="flex-1 overflow-auto">
         <div className="flex gap-4 p-6 min-h-full">
-          {Object.entries(groupedMachines).map(([key, { product, machines }]) => (
-            <ProductColumn
-              key={key}
-              product={product}
-              machines={machines}
-              subProducts={product?.subProducts}
-            />
-          ))}
+          {Object.entries(groupedMachines).map(([key, { product, machines }]) => {
+            // For environment and owner views, pass JSON droppableId to ProductColumn
+            let extraDroppableProps = {};
+            if (selectedView === 'environment') {
+              extraDroppableProps = { droppableId: JSON.stringify({ environment: product?.id }) };
+            } else if (selectedView === 'owner') {
+              extraDroppableProps = { droppableId: JSON.stringify({ owner: product?.id }) };
+            }
+            return (
+              <ProductColumn
+                key={key}
+                product={product}
+                machines={machines}
+                subProducts={product?.subProducts}
+                selectedView={selectedView}
+                {...extraDroppableProps}
+              />
+            );
+          })}
         </div>
       </div>
     </DragDropContext>
